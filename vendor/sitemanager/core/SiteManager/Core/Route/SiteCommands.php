@@ -27,7 +27,7 @@ class SiteCommands extends RouteBase {
     $site = $this->getContextValue('site');
     print '<pre>' . print_r($site->all(), TRUE) . '</pre>';
     $values = $site->all();
-    $values['url'] = 'test.com';
+    $values['url'] = 'swagonline.com';
     $site->update('sid', $values);
     print '<pre>' . print_r($values, TRUE) . '</pre>';
   }

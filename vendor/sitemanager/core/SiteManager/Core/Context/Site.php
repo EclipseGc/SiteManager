@@ -31,8 +31,30 @@ class Site extends UpcastableDataBase implements TableSchemaInterface {
     $schema['sites'] = array(
       'description' => 'The site context base table.',
       'fields' => array(
-
+        'sid' => array(
+          'description' => 'The primary identifier for a site.',
+          'type' => 'serial',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'url' => array(
+          'description' => 'The url of this site.',
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => TRUE,
+          'default' => '',
+        ),
+        'status' => array(
+          'description' => 'The status of this site.',
+          'type' => 'varchar',
+          'length' => 128,
+          'not null' => FALSE,
+        ),
       ),
+      'indexes' => array(
+        'url' => array('url')
+      ),
+      'primary key' => array('sid'),
     );
     return $schema;
   }

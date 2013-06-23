@@ -44,7 +44,12 @@ class ContextManager extends PluginManagerBase {
     if ($definition) {
       $storageController = new $definition['storage']($definition, $this->manager);
       $context = new $definition['class']($storageController);
-      return $context->load($configuration['id']);
+      if (isset($configuration['id'])) {
+        return $context->load($configuration['id']);
+      }
+      else {
+        return $context;
+      }
     }
   }
 
