@@ -11,7 +11,16 @@ use Drupal\Component\Plugin\PluginManagerBase;
 use Symfony\Component\ClassLoader\UniversalClassLoader;
 
 class ContextManager extends PluginManagerBase {
-  public function __construct(UniversalClassLoader $loader) {
+
+  /**
+   * The TableManager for dealing with tables.
+   *
+   * @var SiteManager\Core\TableManager.
+   */
+  protected $manager;
+
+  public function __construct(UniversalClassLoader $loader, TableManager $manager) {
+    $this->manager = $manager;
     $namespaces = $loader->getNamespaces();
     $annotation_dir = $namespaces['SiteManager\Core'];
     foreach ($namespaces as $namespace => $dir) {
@@ -33,8 +42,9 @@ class ContextManager extends PluginManagerBase {
   public function createInstance($plugin_id, array $configuration = array()) {
     $definition = $this->getDefinition($plugin_id);
     if ($definition) {
-      $storageController = new $definition['storage']($definition);
-      return $definition['class']::upcast($configuration['id'], $storageController);
+      $storageController = new $definition['storage']($definition, $this->manager);
+      $context = new $definition['class']($storageController);
+      return $context->load($configuration['id']);
     }
   }
 

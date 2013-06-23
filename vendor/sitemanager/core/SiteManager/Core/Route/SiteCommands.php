@@ -25,6 +25,10 @@ class SiteCommands extends RouteBase {
 
   public function render() {
     $site = $this->getContextValue('site');
-    print '<pre>' . print_r($site, TRUE) . '</pre>';
+    print '<pre>' . print_r($site->all(), TRUE) . '</pre>';
+    $values = $site->all();
+    $values['url'] = 'test.com';
+    $site->update('sid', $values);
+    print '<pre>' . print_r($values, TRUE) . '</pre>';
   }
 }

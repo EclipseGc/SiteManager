@@ -26,5 +26,6 @@ class StatusRoute extends RouteBase {
     foreach ($query as $id => $row) {
       print print_r($row, TRUE) . '<br />';
     }
+
   }
 }

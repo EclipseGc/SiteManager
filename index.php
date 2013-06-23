@@ -8,12 +8,14 @@ use Symfony\Component\HttpFoundation\Response;
 use Drupal\Core\Database\Database;
 use SiteManager\Core\RouteManager;
 use SiteManager\Core\ContextManager;
+use SiteManager\Core\TableManager;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 
 $loader = sitemanager_autoloader();
 
 $request = Request::createFromGlobals();
-$contextManager = new ContextManager($loader);
+$tableManager = new TableManager($loader);
+$contextManager = new ContextManager($loader, $tableManager);
 $routeManager = new RouteManager($loader, $contextManager);
 
 try {

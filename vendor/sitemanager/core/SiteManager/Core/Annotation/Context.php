@@ -33,6 +33,6 @@ class Context extends Plugin {
    *
    * @var string
    */
-  protected $storage = 'SiteManager\Core\Controller\SqlStorageController';
+  protected $storage = '';
 
 }

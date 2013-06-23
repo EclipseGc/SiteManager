@@ -21,6 +21,6 @@ interface UpcastInterface {
    * @return mixed
    *   Returns a full class instance based on the id value.
    */
-  public static function upcast($id, StorageInterface $controller = NULL);
+  public function load($id);
 
 }

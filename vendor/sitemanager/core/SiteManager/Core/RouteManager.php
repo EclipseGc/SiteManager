@@ -20,6 +20,13 @@ class RouteManager extends PluginManagerBase {
    */
   protected $manager;
 
+  /**
+   * Sets up the discovery & factory for route plugins.
+   *
+   * This consumes the ContextManager in addition to
+   * @param UniversalClassLoader $loader
+   * @param ContextManager $manager
+   */
   public function __construct(UniversalClassLoader $loader, ContextManager $manager) {
     $this->manager = $manager;
     $namespaces = $loader->getNamespaces();
