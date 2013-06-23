@@ -87,7 +87,6 @@ class RouteManager extends PluginManagerBase {
             ))
             ->execute();
         }
-        print '<pre>' . print_r($definition, TRUE) . '</pre>';
       }
     }
     return $definitions;
@@ -183,9 +182,6 @@ class RouteManager extends PluginManagerBase {
     $context->fromRequest($request);
 
     $collection = new RouteCollection();
-    foreach ($this->getDefinitions() as $plugin_id => $definition) {
-      $collection->add($plugin_id, $this->getRoute($plugin_id, $definition));
-    }
 
     $instance = $this->getInstance(array('path_info' => $request->getPathInfo()));
     if ($instance) {
