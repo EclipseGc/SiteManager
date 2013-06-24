@@ -1,23 +1,80 @@
 <?php
 /**
- * @file Contains SiteManager\Core\Tables\Route.
+ * @file Contains SiteManager\Core\Site.
  */
 
-namespace SiteManager\Core\Tables;
+namespace SiteManager\Core\Context;
 
-use SiteManager\Core\Annotation\Table;
+use Drupal\Core\Database\Database;
+use SiteManager\Core\Annotation\Context;
 use SiteManager\Core\TableSchemaInterface;
+use SiteManager\Core\UpcastableDataBase;
 
 /**
- * @Table(
+ * @Context(
  *   id = "route",
- *   group = "Route Tables",
- *   tables = {
- *     "route"
- *   }
+ *   base_table = "route",
+ *   primary_key = "name",
+ *   storage = "SiteManager\Core\Controller\SqlStorageController"
  * )
  */
-class Route implements TableSchemaInterface {
+class Route extends UpcastableDataBase implements TableSchemaInterface {
+
+  /**
+   * The route name.
+   *
+   * @var string
+   */
+  protected $name;
+
+  /**
+   * The path pattern to match.
+   *
+   * @var string
+   */
+  protected $path = '/';
+
+  /**
+   * An array of default parameter values.
+   *
+   * @var array
+   */
+  protected $defaults = array();
+
+  /**
+   * An array of requirements for parameters (regexes).
+   *
+   * @var array
+   */
+  protected $requirements = array();
+
+  /**
+   * An array of options.
+   *
+   * @var array
+   */
+  protected $options = array();
+
+  /**
+   * The host pattern to match.
+   *
+   * @var string
+   */
+  protected $host = '';
+
+  /**
+   * A required URI scheme or an array of restricted schemes.
+   *
+   * @var array
+   */
+  protected $schemes = array();
+
+  /**
+   * A required HTTP method or an array of restricted methods.
+   *
+   * @var array
+   */
+  protected $methods = array();
 
   public function getSchema() {
     $schema = array();
@@ -98,5 +155,4 @@ class Route implements TableSchemaInterface {
     );
     return $schema;
   }
-
 }
