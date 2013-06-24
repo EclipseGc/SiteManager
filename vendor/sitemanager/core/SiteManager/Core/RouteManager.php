@@ -168,33 +168,27 @@ class RouteManager extends PluginManagerBase {
     parent::processDefinition($definition, $plugin_id);
   }
 
-  public function getInstance(array $options) {
-    $path = $options['path_info'];
-    if (Database::getConnection()->schema()->tableExists('route')) {
-      $definition = Database::getConnection()
-        ->select('route', 'r')
-        ->fields('r')
-        ->condition('r.path', $path)
-        ->execute()
-        ->fetchAssoc();
-      if ($definition) {
-        $this->unserialize($definition);
-        return $this->createInstance($definition['name']);
-      }
-    }
-  }
-
   public function matchRoute(Request $request) {
     $context = new RequestContext();
     $context->fromRequest($request);
 
     $collection = new RouteCollection();
 
-    $instance = $this->getInstance(array('path_info' => $request->getPathInfo()));
-    if ($instance) {
-      $collection->add($instance->getPluginId(), $this->getRoute($instance->getPluginId(), $instance->getPluginDefinition()));
+    if (Database::getConnection()->schema()->tableExists('route')) {
+       $results = Database::getConnection()
+        ->select('route', 'r')
+        ->fields('r')
+        ->condition('r.path', $request->getPathInfo())
+        ->execute();
+      if ($results && $results->rowCount()) {
+        foreach ($results as $result) {
+          $definition = (array) $result;
+          $this->unserialize($definition);
+          $collection->add($definition['name'], $this->getRoute($definition['name'], $definition));
+        }
+      }
     }
-    else if (Database::getConnection()->schema()->tableExists('route')) {
+    if (!$collection->count() && Database::getConnection()->schema()->tableExists('route')) {
       $path = $request->getPathInfo();
       $path = explode('/', $path);
       $path = array_reverse($path);
