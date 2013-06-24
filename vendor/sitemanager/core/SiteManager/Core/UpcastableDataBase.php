@@ -6,8 +6,9 @@
 namespace SiteManager\Core;
 
 use SiteManager\Core\Controller\StorageInterface;
+use Drupal\Component\Plugin\PluginBase;
 
-class UpcastableDataBase implements UpcastInterface, DataInterface {
+class UpcastableDataBase extends PluginBase implements UpcastInterface, DataInterface {
 
   /**
    * The storage controller for this context.
@@ -16,16 +17,17 @@ class UpcastableDataBase implements UpcastInterface, DataInterface {
    */
   protected $controller;
 
-  public function __construct(StorageInterface $controller = NULL) {
+  public function __construct(StorageInterface $controller = NULL, array $configuration, $plugin_id, array $plugin_definition) {
     $this->controller = $controller;
+    parent::__construct($configuration, $plugin_id, $plugin_definition);
   }
 
   public function load($id) {
     return $this->controller->load($id);
   }
 
-  public function update($id, $values) {
-    return $this->controller->update($id, $values);
+  public function save() {
+    return isset($this->{$this->pluginDefinition['primary_key']}) ? $this->controller->update($this->pluginDefinition['primary_key'], $this) : $this->controller->create($this);
   }
 
   public function __set($name, $value) {

@@ -5,6 +5,7 @@
 
 namespace SiteManager\Core\Controller;
 
+use SiteManager\Core\DataInterface;
 use SiteManager\Core\TableManager;
 
 interface StorageInterface {
@@ -13,9 +14,9 @@ interface StorageInterface {
 
   public function load($id);
 
-  public function create(array $values);
+  public function create(DataInterface $values);
 
-  public function update($id, array $values);
+  public function update($id, DataInterface $values);
 
   public function delete($id);
 

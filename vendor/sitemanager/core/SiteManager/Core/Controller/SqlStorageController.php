@@ -6,6 +6,7 @@
 namespace SiteManager\Core\Controller;
 
 use Drupal\Core\Database\Database;
+use SiteManager\Core\DataInterface;
 use SiteManager\Core\TableManager;
 
 class SqlStorageController implements StorageInterface {
@@ -48,31 +49,25 @@ class SqlStorageController implements StorageInterface {
       ->fields('base_table')
       ->condition('base_table.' . $this->definition['primary_key'], $id)
       ->execute()
-      ->fetchObject($this->definition['class'], array($this));
+      ->fetchObject($this->definition['class'], array($this, array('id' => $id), $this->definition['id'], $this->definition));
   }
 
-  public function create(array $values) {
-    $this->write($values);
-    return $values;
+  public function create(DataInterface $values) {
+    return $this->write($values);
   }
 
-  public function update($id, array $values) {
-    $this->write($values, array($id));
-    return $values;
+  public function update($id, DataInterface $values) {
+    return $this->write($values, array($id));
   }
 
   public function delete($id) {}
 
-  protected function write(array &$record, array $primary_keys = array()) {
+  protected function write(DataInterface $object, array $primary_keys = array()) {
     $schema = $this->manager->getSchema($this->definition['base_table']);
     if (empty($schema)) {
       return FALSE;
     }
 
-    $object = new $this->definition['class']();
-    foreach ($record as $key => $value) {
-      $object->$key = $value;
-    }
     $fields = array();
     $default_fields = array();
 
@@ -184,9 +179,6 @@ class SqlStorageController implements StorageInterface {
         }
       }
     }
-
-
-    $record = (array) $object;
 
     return $return;
   }
