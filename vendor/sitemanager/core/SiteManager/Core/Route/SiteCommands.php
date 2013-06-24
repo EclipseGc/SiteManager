@@ -24,15 +24,15 @@ use SiteManager\Core\ContextManager;
  * )
  */
 class SiteCommands extends RouteBase {
-  protected $type = 'html';
+  protected $type = 'xhtml';
 
   public function render() {
     $site = $this->getContextValue('site');
-    print '<pre>' . print_r($site->all(), TRUE) . '</pre>';
+    print print_r($site->all(), TRUE);
     // Updating
     $site->url = 'test.com';
     $test = $site->save();
-    print '<pre>' . print_r($site->all(), TRUE) . '</pre>';
+    print print_r($site->all(), TRUE);
     // Creating: This requires a bunch of bs code we shouldn't have to do because this class isn't meant for this.
     $loader = sitemanager_autoloader();
     $tableManager = new TableManager($loader);
@@ -41,6 +41,6 @@ class SiteCommands extends RouteBase {
     $newsite->url = 'mynewsite.com';
     $newsite->status = 'inactive';
     $newsite->save();
-    print '<pre>' . print_r($newsite->all(), TRUE) . '</pre>';
+    print print_r($newsite->all(), TRUE);
   }
 }

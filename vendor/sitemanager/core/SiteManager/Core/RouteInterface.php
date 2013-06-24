@@ -16,7 +16,7 @@ interface RouteInterface extends ContextAwarePluginInterface {
   /**
    * Retrieves the type of route item.
    *
-   * @return string form|html|xml|json
+   * @return string form|html|xml|json|etc
    */
   public function getType();
 
@@ -37,4 +37,11 @@ interface RouteInterface extends ContextAwarePluginInterface {
    * @return mixed
    */
   public function render();
+
+  /**
+   * Generate a response object for this route.
+   *
+   * @return Symfony\Component\HttpFoundation\Response
+   */
+  public function getResponse();
 }

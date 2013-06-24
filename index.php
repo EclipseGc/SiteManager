@@ -21,7 +21,7 @@ $routeManager = new RouteManager($loader, $contextManager);
 try {
   $route = $routeManager->matchRoute($request);
   $routePlugin = $routeManager->createInstance($route['_route'], array('request' => $request, 'route' => $route));
-  $response = new Response($routePlugin->render());
+  $response = $routePlugin->getResponse();
 }
 catch (ResourceNotFoundException $e) {
   $response = new Response();
