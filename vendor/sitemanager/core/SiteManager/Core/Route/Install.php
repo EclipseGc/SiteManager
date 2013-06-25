@@ -9,12 +9,7 @@ use SiteManager\Core\Annotation\Route;
 use SiteManager\Core\RouteBase;
 use SiteManager\Core\TableManager;
 
-/**
- * @Route(
- *   id = "install",
- *   path = "/install"
- * )
- */
+
 class Install extends RouteBase {
   protected $type = 'html';
 

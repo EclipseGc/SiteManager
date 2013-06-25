@@ -41,14 +41,22 @@ class ContextManager extends PluginManagerBase {
    */
   public function createInstance($plugin_id, array $configuration = array()) {
     $definition = $this->getDefinition($plugin_id);
-    if ($definition) {
-      $storageController = new $definition['storage']($definition, $this->manager);
-      if (isset($configuration['id'])) {
-        return $storageController->load($configuration['id']);
+    $storageController = $this->getStorage($plugin_id);
+    if (isset($configuration['id'])) {
+      return $storageController->load($configuration['id']);
+    }
+    else {
+      $instance = new $definition['class']($storageController, $configuration, $plugin_id, $definition);
+      if (isset($configuration['values'])) {
+        $class = new \ReflectionClass($definition['class']);
+        $properties = $class->getProperties();
+        foreach ($properties as $property) {
+          if ($property->class == $definition['class'] && isset($configuration['values'][$property->name])) {
+            $instance->{$property->name} = $configuration['values'][$property->name];
+          }
+        }
       }
-      else {
-        return new $definition['class']($storageController, $configuration, $plugin_id, $definition);
-      }
+      return $instance;
     }
   }
 
@@ -68,6 +76,13 @@ class ContextManager extends PluginManagerBase {
         );
         return $this->createInstance($plugin_id, $configuration);
       }
+    }
+  }
+
+  public function getStorage($plugin_id) {
+    $definition = $this->getDefinition($plugin_id);
+    if ($definition['storage']) {
+      return new $definition['storage']($definition, $this->manager);
     }
   }
 }

@@ -44,12 +44,54 @@ class SqlStorageController implements StorageInterface {
   }
 
   public function load($id) {
-    return Database::getConnection()
+    if (!Database::getConnection()->schema()->tableExists($this->definition['base_table'])) {
+      return;
+    }
+    $object = Database::getConnection()
       ->select($this->definition['base_table'], 'base_table')
       ->fields('base_table')
       ->condition('base_table.' . $this->definition['primary_key'], $id)
       ->execute()
       ->fetchObject($this->definition['class'], array($this, array('id' => $id), $this->definition['id'], $this->definition));
+    if ($object) {
+      $this->resultUnserialize($object);
+      return $object;
+    }
+  }
+
+  public function loadMultiple(array $ids = array(), array $conditions = array()) {
+    if (!Database::getConnection()->schema()->tableExists($this->definition['base_table'])) {
+      return array();
+    }
+    $query = Database::getConnection()
+      ->select($this->definition['base_table'], 'base_table')
+      ->fields('base_table');
+    if ($ids) {
+      $query->condition('base_table.' . $this->definition['primary_key'], $ids, 'IN');
+    }
+    foreach ($conditions as $key => $value) {
+      $query->condition('base_table.' . $key, $value);
+    }
+    $results = $query->execute();
+    $results->setFetchMode(\PDO::FETCH_CLASS, $this->definition['class'], array($this, array(), $this->definition['id'], $this->definition));
+    $objects = $results->fetchAllAssoc($this->definition['primary_key']);
+    foreach ($objects as $id => $object) {
+      $this->resultUnserialize($object);
+    }
+    return $objects;
+  }
+
+  protected function resultUnserialize(DataInterface $data) {
+    $schema = $this->manager->getSchema($this->definition['base_table']);
+    if (empty($schema)) {
+      return FALSE;
+    }
+
+    foreach ($schema['fields'] as $field => $info) {
+      if (isset($info['serialize']) && $info['serialize'] && is_string($data->$field)) {
+        $data->$field = unserialize($data->$field);
+      }
+    }
   }
 
   public function create(DataInterface $values) {
@@ -61,6 +103,12 @@ class SqlStorageController implements StorageInterface {
   }
 
   public function delete($id) {}
+
+  public function deleteMultiple(array $ids = array()) {
+    if (!$ids) {
+      Database::getConnection()->truncate($this->definition['base_table'])->execute();
+    }
+  }
 
   protected function write(DataInterface $object, array $primary_keys = array()) {
     $schema = $this->manager->getSchema($this->definition['base_table']);

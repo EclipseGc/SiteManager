@@ -6,19 +6,28 @@ use Drupal\Component\Plugin\PluginManagerBase;
 use Drupal\Component\Plugin\Discovery\AnnotatedClassDiscovery;
 use Drupal\Component\Plugin\Discovery\DerivativeDiscoveryDecorator;
 use Drupal\Component\Plugin\Factory\DefaultFactory;
+use Drupal\Core\Database\Database;
 use Symfony\Component\ClassLoader\UniversalClassLoader;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Matcher\UrlMatcher;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\RouteCollection;
-use Drupal\Core\Database\Database;
 
 class RouteManager extends PluginManagerBase {
 
   /**
+   * The context manager for context resolution.
+   *
    * @var ContextManager
    */
   protected $manager;
+
+  /**
+   * Previously loaded route definitions.
+   *
+   * @var array();
+   */
+  protected $definitions;
 
   /**
    * Sets up the discovery & factory for route plugins.
@@ -40,88 +49,127 @@ class RouteManager extends PluginManagerBase {
     $this->factory = new DefaultFactory($this);
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getDefinition($plugin_id) {
-    if (Database::getConnection()->schema()->tableExists('route')) {
-      $definition = Database::getConnection()
-        ->select('route', 'r')
-        ->fields('r')
-        ->condition('r.name', $plugin_id)
-        ->execute()
-        ->fetchAssoc();
-      $this->unserialize($definition);
+    if (isset($this->definitions[$plugin_id])) {
+      return $this->definitions[$plugin_id];
     }
-    if (empty($definition)) {
-      $definition = parent::getDefinition($plugin_id);
+    // Routes are cached in their own context table, so the storage controller
+    // for the context is loaded in order to attempt to load requested route.
+    $storage = $this->manager->getStorage('route');
+    $route = $storage->loadMultiple(array(), array('name' => $plugin_id));
+    // Name is unique, it's just not the primary key.
+    $route = array_pop($route);
+    // If we have a route, return its values.
+    if ($route) {
+      $this->definitions[$plugin_id] = $route->all();
+      return $this->definitions[$plugin_id];
     }
-    $this->processDefinition($definition, $plugin_id);
-    return $definition;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getDefinitions() {
-    if (Database::getConnection()->schema()->tableExists('route')) {
-      $query = Database::getConnection()
-        ->select('route', 'r')
-        ->fields('r')
-        ->execute();
+    $controller = $this->manager->getStorage('route');
+    $routes = $controller->loadMultiple();
+    foreach ($routes as $route) {
+      $this->definitions[$route->name] = $route->all();
     }
-    if (isset($query) && $query->rowCount()) {
-      $definitions = array();
-      foreach ($query as $result) {
-        $definitions[$result->name] = (array) $result;
-        $this->unserialize($definitions[$result->name]);
-      }
-    }
-    else {
-      $definitions = parent::getDefinitions();
-      foreach ($definitions as $plugin_id => &$definition) {
-        $this->processDefinition($definition, $plugin_id);
-        if (Database::getConnection()->schema()->tableExists('route')) {
-          Database::getConnection()
-            ->insert('route')
-            ->fields(array('name', 'path', 'defaults', 'requirements', 'options', 'host', 'schemes', 'methods', 'path_root', 'class', 'context'))
-            ->values(array(
-              'name' => $definition['name'],
-              'path' => $definition['path'],
-              'defaults' => serialize($definition['defaults']),
-              'requirements' => serialize($definition['requirements']),
-              'options' => serialize($definition['options']),
-              'host' => $definition['host'],
-              'schemes' => serialize($definition['schemes']),
-              'methods' => serialize($definition['methods']),
-              'path_root' => $definition['path_root'],
-              'class' => $definition['class'],
-              'context' => serialize($definition['context'])
-            ))
-            ->execute();
-        }
-      }
-    }
-    return $definitions;
+    return $this->definitions;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function createInstance($plugin_id, array $configuration = array()) {
     $instance = parent::createInstance($plugin_id, $configuration);
     if (isset($configuration['request'])) {
       $instance->setRequest($configuration['request']);
     }
     if (isset($configuration['route'])) {
-      $contexts = $instance->getContextDefinitions();
-      foreach ($contexts as $argument => $definition) {
-        $options = array(
-          'id' => $configuration['route'][$argument],
-          'definition' => $definition,
-        );
-        $context = $this->manager->getInstance($options);
-        $instance->setContextValue($argument, $context);
-      }
+      $this->setRouteContext($instance, $configuration['route']);
     }
     return $instance;
   }
 
-  public function getRoute($plugin_id, array $definition = array()) {
-    if (!$definition) {
-      $definition = $this->getDefinition($plugin_id);
+  /**
+   * {@inheritdoc}
+   */
+  public function processDefinition($definition, $plugin_id) {
+    $definition->defaults += array('_controller' => $definition->class . '::render');
+    $path = explode('/', $definition->path);
+    $path_root = array();
+    foreach ($path as $position => $value) {
+      if (substr($value, 0, 1) != '{') {
+        $path_root[] = $value;
+      }
+      else {
+        break;
+      }
     }
+    $definition->path_root = implode("/", $path_root);
+
+    if (!isset($definition->name)) {
+      $definition->name = $plugin_id;
+    }
+    if (!$definition->context) {
+      $definition->context = array();
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function clearCachedDefinitions() {
+    $storage = $this->manager->getStorage('route');
+    $storage->deleteMultiple();
+  }
+
+  /**
+   * Retrieve definitions from annotations and cache them in the route table.
+   */
+  public function buildCachedDefinitions() {
+    $definitions = parent::getDefinitions();
+    foreach ($definitions as $plugin_id => &$definition) {
+      $route = $this->manager->createInstance('route', array('values' => $definition));
+      $this->processDefinition($route, $plugin_id);
+      $route->save();
+    }
+  }
+
+  /**
+   * Set any available contexts from the request into the route plugin.
+   *
+   * @param RouteInterface $instance
+   *   The instantiated Route plugin.
+   * @param array $route_info
+   *   The route information as generated by UrlMatcherInterface::match().
+   */
+  protected function setRouteContext(RouteInterface $instance, array $route_info) {
+    $contexts = $instance->getContextDefinitions();
+    foreach ($contexts as $argument => $definition) {
+      $options = array(
+        'id' => $route_info[$argument],
+        'definition' => $definition,
+      );
+      $context = $this->manager->getInstance($options);
+      $instance->setContextValue($argument, $context);
+    }
+  }
+
+  /**
+   * Generate a Symfony Route object from the plugin definition.
+   *
+   * @param $plugin_id
+   *   The plugin id to generate the route from.
+   *
+   * @return Symfony\Component\Routing\Route
+   */
+  public function getRoute($plugin_id) {
+    $definition = $this->getDefinition($plugin_id);
     if (isset($definition['class'])) {
       $class = new \ReflectionClass('Symfony\Component\Routing\Route');
       $args = array();
@@ -136,59 +184,40 @@ class RouteManager extends PluginManagerBase {
     }
   }
 
+  /**
+   * Generate a route collection from all route plugins.
+   *
+   * @return Symfony\Component\Routing\RouteCollection
+   */
   public function getRouteCollection() {
     $collection = new RouteCollection();
     foreach ($this->getDefinitions() as $plugin_id => $definition) {
-      $collection->add($plugin_id, $this->getRoute($plugin_id, $definition));
+      $collection->add($plugin_id, $this->getRoute($plugin_id));
     }
     return $collection;
   }
 
-  public function processDefinition(&$definition, $plugin_id) {
-    $definition['defaults']['_controller'] = $definition['class'] . '::render';
-    if (!isset($definition['path_root'])) {
-      $path = explode('/', $definition['path']);
-      $path_root = array();
-      foreach ($path as $position => $value) {
-        if (substr($value, 0, 1) != '{') {
-          $path_root[] = $value;
-        }
-        else {
-          break;
-        }
-      }
-      $definition['path_root'] = implode("/", $path_root);
-    }
-    if (!isset($definition['name'])) {
-      $definition['name'] = $definition['id'];
-    }
-    if (!isset($definition['context'])) {
-      $definition['context'] = array();
-    }
-    parent::processDefinition($definition, $plugin_id);
-  }
-
+  /**
+   * Matches the current request with a route and returns route information.
+   *
+   * @param Symfony\Component\HttpFoundation\Request $request
+   *   The current request object.
+   *
+   * @return array
+   */
   public function matchRoute(Request $request) {
     $context = new RequestContext();
     $context->fromRequest($request);
 
     $collection = new RouteCollection();
 
-    if (Database::getConnection()->schema()->tableExists('route')) {
-       $results = Database::getConnection()
-        ->select('route', 'r')
-        ->fields('r')
-        ->condition('r.path', $request->getPathInfo())
-        ->execute();
-      if ($results && $results->rowCount()) {
-        foreach ($results as $result) {
-          $definition = (array) $result;
-          $this->unserialize($definition);
-          $collection->add($definition['name'], $this->getRoute($definition['name'], $definition));
-        }
-      }
+    // Attempt to build a route collection by the current path.
+    $storage = $this->manager->getStorage('route');
+    foreach ($storage->loadMultiple(array(), array('path' => $request->getPathInfo())) as $route) {
+      $collection->add($route->name, $this->getRoute($route->name));
     }
-    if (!$collection->count() && Database::getConnection()->schema()->tableExists('route')) {
+    // Attempt to build a route collection by path_root.
+    if (!$collection->count()) {
       $path = $request->getPathInfo();
       $path = explode('/', $path);
       $path = array_reverse($path);
@@ -196,34 +225,21 @@ class RouteManager extends PluginManagerBase {
         $path_root = array_reverse($path);
         array_pop($path_root);
         $path_root = implode('/', $path_root);
-        $results = Database::getConnection()
-          ->select('route', 'r')
-          ->fields('r')
-          ->condition('r.path_root', $path_root)
-          ->execute();
-        if ($results && $results->rowCount()) {
-          foreach ($results as $result) {
-            $definition = (array) $result;
-            $this->unserialize($definition);
-            $collection->add($definition['name'], $this->getRoute($definition['name'], $definition));
+        $routes = $storage->loadMultiple(array(), array('path_root' => $path_root));
+        if ($routes) {
+          foreach ($routes as $route) {
+            $collection->add($route->name, $this->getRoute($route->name));
           }
           break;
         }
       }
     }
-    else {
+    // If all else fails just build all the routes.
+    if (!$collection->count()) {
       $collection = $this->getRouteCollection();
     }
     $matcher = new UrlMatcher($collection, $context);
     return $matcher->match($request->getPathInfo());
   }
 
-  protected function unserialize(array &$definition) {
-    $definition['defaults'] = unserialize($definition['defaults']);
-    $definition['requirements'] = unserialize($definition['requirements']);
-    $definition['options'] = unserialize($definition['options']);
-    $definition['schemes'] = unserialize($definition['schemes']);
-    $definition['methods'] = unserialize($definition['methods']);
-    $definition['context'] = unserialize($definition['context']);
-  }
 }
