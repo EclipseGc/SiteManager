@@ -40,8 +40,8 @@ class SiteCommands extends RouteBase {
     $newsite = $contextManager->createInstance('site');
     $newsite->url = 'mynewsite.com';
     $newsite->status = 'inactive';
-//    $newsite->save();
-  //  print print_r($newsite->all(), TRUE);
+    $newsite->save();
+    print print_r($newsite->all(), TRUE);
     $storage = $contextManager->getStorage('route');
     $route = $storage->loadMultiple(array(), array('name' => 'site_commands'));
     $route = array_pop($route);
