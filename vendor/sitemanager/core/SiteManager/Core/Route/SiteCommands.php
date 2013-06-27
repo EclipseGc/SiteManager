@@ -8,9 +8,7 @@ namespace SiteManager\Core\Route;
 use Drupal\Core\Database\Database;
 use SiteManager\Core\Annotation\Route;
 use SiteManager\Core\RouteBase;
-// Remove these after you're done testing.
-use SiteManager\Core\TableManager;
-use SiteManager\Core\ContextManager;
+use SiteManager\Core\Container;
 
 /**
  * @Route(
@@ -34,9 +32,7 @@ class SiteCommands extends RouteBase {
     $test = $site->save();
     print print_r($site->all(), TRUE);
     // Creating: This requires a bunch of bs code we shouldn't have to do because this class isn't meant for this.
-    $loader = sitemanager_autoloader();
-    $tableManager = new TableManager($loader);
-    $contextManager = new ContextManager($loader, $tableManager);
+    $contextManager = Container::get('plugin.manager.context');
     $newsite = $contextManager->createInstance('site');
     $newsite->url = 'mynewsite.com';
     $newsite->status = 'inactive';

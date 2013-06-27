@@ -1,11 +1,24 @@
 {
-    "require": {
-        "symfony/class-loader": "2.3.*",
-        "symfony/http-foundation": "2.3.*",
-        "symfony/routing": "2.3.*",
-        "symfony/config": "2.3.*",
-        "symfony/validator": "2.3.*",
-        "symfony/translation": "2.3.*",
-        "doctrine/common": "2.3.*"
+  "require": {
+    "symfony/class-loader": "2.3.*",
+    "symfony/http-foundation": "2.3.*",
+    "symfony/http-kernel": "2.3.*",
+    "symfony/event-dispatcher": "~2.3",
+    "symfony/dependency-injection": "~2.3",
+    "symfony/routing": "2.3.*",
+    "symfony/config": "2.3.*",
+    "symfony/validator": "2.3.*",
+    "symfony/translation": "2.3.*",
+    "doctrine/common": "2.3.*"
+  },
+  "autoload": {
+    "psr-0": {
+      "Drupal\\Core\\Database": "vendor/drupal/database",
+      "Drupal\\Component\\Annotation": "vendor/drupal/annotation",
+      "Drupal\\Component\\Plugin": "vendor/drupal/plugin",
+      "Drupal\\Component\\Reflection": "vendor/drupal/reflection",
+      "Drupal\\Component\\Utility": "vendor/drupal/utility",
+      "SiteManager\\Core": "vendor/sitemanager/core"
     }
+  }
 }

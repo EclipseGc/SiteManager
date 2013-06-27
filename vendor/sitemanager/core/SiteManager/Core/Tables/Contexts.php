@@ -10,10 +10,10 @@
 namespace SiteManager\Core\Tables;
 
 use Drupal\Component\Plugin\PluginBase;
-use SiteManager\Core\TableManager;
-use SiteManager\Core\ContextManager;
 use SiteManager\Core\Annotation\Table;
 use SiteManager\Core\TableSchemaInterface;
+use SiteManager\Core\Container;
+
 
 /**
  * @Table(
@@ -26,9 +26,7 @@ class Contexts extends PluginBase implements TableSchemaInterface {
 
   public function getSchema() {
     list($plugin_id, $context) = explode(':', $this->getPluginId());
-    $loader = sitemanager_autoloader();
-    $tableManager = new TableManager($loader);
-    $contextManager = new ContextManager($loader, $tableManager);
+    $contextManager = Container::get('plugin.manager.context');
     $context = $contextManager->createInstance($context);
     if ($context instanceof TableSchemaInterface) {
       return $context->getSchema();

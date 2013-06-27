@@ -1,6 +1,7 @@
 <?php
 /**
- * @file Contains SiteManager\Core\TableManager.
+ * @file
+ * Contains SiteManager\Core\TableManager.
  */
 
 namespace SiteManager\Core;

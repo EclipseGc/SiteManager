@@ -1,6 +1,7 @@
 <?php
 /**
- * @file Contains SiteManager\Core\UpcastableDataBase.
+ * @file
+ * Contains SiteManager\Core\UpcastableDataBase.
  */
 
 namespace SiteManager\Core;

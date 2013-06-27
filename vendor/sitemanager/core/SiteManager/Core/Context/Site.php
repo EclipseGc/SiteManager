@@ -1,6 +1,7 @@
 <?php
 /**
- * @file Contains SiteManager\Core\Site.
+ * @file
+ * Contains SiteManager\Core\Context\Site.
  */
 
 namespace SiteManager\Core\Context;
