@@ -17,6 +17,9 @@ $container->register('plugin.manager.context', 'SiteManager\Core\ContextManager'
 $container->register('plugin.manager.routes', 'SiteManager\Core\RouteManager')
   ->setArguments(array('%loader%', new Reference('plugin.manager.context')));
 
+$container->register('controller.resolver', 'SiteManager\Core\ControllerResolver')
+  ->setArguments(array(new Reference('plugin.manager.routes')));
+
 Container::setContainer($container);
 
 return $container;

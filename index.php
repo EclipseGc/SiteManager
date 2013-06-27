@@ -10,11 +10,15 @@ use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 
 $request = Request::createFromGlobals();
 $routeManager = $container->get('plugin.manager.routes');
+$resolver = $container->get('controller.resolver');
 
 try {
-  $route = $routeManager->matchRoute($request);
-  $routePlugin = $routeManager->createInstance($route['_route'], array('request' => $request, 'route' => $route));
-  $response = $routePlugin->getResponse();
+  $request->attributes->add($routeManager->matchRoute($request));
+
+  $controller = $resolver->getController($request);
+  $arguments = $resolver->getArguments($request, $controller);
+
+  $response = call_user_func_array($controller, $arguments);
 }
 catch (ResourceNotFoundException $e) {
   $response = new Response();
