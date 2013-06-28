@@ -56,6 +56,7 @@ abstract class RouteBase extends ContextAwarePluginBase implements RouteInterfac
   public function getResponse() {
     $response = new Response($this->render());
     $response->headers->set('Content-Type', $this->getType());
+    $response->setTtl(20);
     return $response;
   }
 

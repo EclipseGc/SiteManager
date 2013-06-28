@@ -5,7 +5,7 @@ require_once __DIR__ . '/../vendor/symfony/class-loader/Symfony/Component/ClassL
 use Symfony\Component\ClassLoader\UniversalClassLoader;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
-use SiteManager\Core\Container;
+use SiteManager\Core\Service;
 
 $map = require __DIR__ . '/../vendor/composer/autoload_namespaces.php';
 $loader = new UniversalClassLoader();

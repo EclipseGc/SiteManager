@@ -11,7 +11,7 @@ namespace SiteManager\Core;
 
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
-class Container {
+class Service {
 
   static protected $container;
 
