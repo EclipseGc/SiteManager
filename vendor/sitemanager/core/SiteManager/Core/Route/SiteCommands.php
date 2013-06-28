@@ -29,11 +29,11 @@ class SiteCommands extends RouteBase {
     $site = $this->getContextValue('site');
     $output .= print_r($site->all(), TRUE);
     // Updating
-    $site->url = 'bigfattest.com';
+    $site->url = 'testingmoar.com';
     $test = $site->save();
     $output .= print_r($site->all(), TRUE);
 
-    $contextManager = Service::get('plugin.manager.context');
+/*    $contextManager = Service::get('plugin.manager.context');
     $newsite = $contextManager->createInstance('site');
     $newsite->url = 'mynewsite.com';
     $newsite->status = 'inactive';
@@ -42,7 +42,9 @@ class SiteCommands extends RouteBase {
     $storage = $contextManager->getStorage('route');
     $route = $storage->loadMultiple(array(), array('name' => 'site_commands'));
     $route = array_pop($route);
-    $output .= print_r($route->all(), TRUE);
+    $output .= print_r($route->all(), TRUE);*/
+    $output .= print_r($this->request->query->get('test'), TRUE);
+
     return $output;
   }
 }

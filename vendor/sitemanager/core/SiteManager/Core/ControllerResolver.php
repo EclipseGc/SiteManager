@@ -9,13 +9,15 @@
 
 namespace SiteManager\Core;
 
-use Symfony\Component\HttpKernel\Controller\ControllerResolver as ControllerResolverBase;
+use Symfony\Component\HttpKernel\Controller\ControllerResolverInterface;
 use SiteManager\Core\RouteManager;
 use Symfony\Component\HttpFoundation\Request;
 
-class ControllerResolver extends ControllerResolverBase {
+class ControllerResolver implements ControllerResolverInterface {
 
   protected $manager;
+
+  protected $logger;
 
   /**
    * Constructor.
@@ -27,19 +29,28 @@ class ControllerResolver extends ControllerResolverBase {
    */
   public function __construct(RouteManager $manager, LoggerInterface $logger = null) {
     $this->manager = $manager;
-    parent::__construct($logger);
+    $this->logger = $logger;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getController(Request $request) {
     if (!$route = $request->attributes->get('_route')) {
-      return parent::getController($request);
+      return;
     }
 
     $definition = $this->manager->getDefinition($route);
     if ($definition && strpos($request->attributes->get('_controller'), $definition['class']) === 0) {
       return array($this->manager->createInstance($route, array('request' => $request)), 'getResponse');
     }
-    return parent::getController($request);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getArguments(Request $request, $controller) {
+    return array();
   }
 
 }
