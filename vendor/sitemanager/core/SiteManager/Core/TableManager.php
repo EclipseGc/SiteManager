@@ -67,14 +67,16 @@ class TableManager extends PluginManagerBase {
 
   public function installSchemas() {
     $schema = $this->getSchemas();
+    $output = '';
     foreach ($schema as $name => $table) {
       try {
         Database::getConnection()->schema()->createTable($name, $table);
-        print String::format('The @name table has been successfully created.', array('@name' => $name));
+        $output .= String::format('The @name table has been successfully created.', array('@name' => $name));
       }
       catch (SchemaObjectExistsException $e) {
-        print String::format('@message It has been skipped.', array('@message' => $e->getMessage()));
+        $output .= String::format('@message It has been skipped.', array('@message' => $e->getMessage()));
       }
     }
+    return $output;
   }
 }

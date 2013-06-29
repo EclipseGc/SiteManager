@@ -10,14 +10,14 @@
 namespace SiteManager\Core;
 
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpKernel\Controller\ControllerResolverInterface;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
-use Symfony\Component\HttpFoundation\Response;
 
 class PluginRouterListener implements EventSubscriberInterface {
 
   protected $resolver;
 
-  public function __construct(ControllerResolver $resolver) {
+  public function __construct(ControllerResolverInterface $resolver) {
     $this->resolver = $resolver;
   }
 
@@ -25,8 +25,7 @@ class PluginRouterListener implements EventSubscriberInterface {
     $request = $event->getRequest();
     if ($controller = $this->resolver->getController($request)) {
       $arguments = $this->resolver->getArguments($request, $controller);
-      $response = new Response(call_user_func_array($controller, $arguments));
-      $event->setResponse($response);
+      $event->setResponse(call_user_func_array($controller, $arguments));
     }
   }
 

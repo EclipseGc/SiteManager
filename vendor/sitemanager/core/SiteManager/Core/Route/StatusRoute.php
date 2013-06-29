@@ -18,14 +18,15 @@ class StatusRoute extends RouteBase {
   protected $type = 'html';
 
   public function render() {
+    $output = '';
     $query = Database::getConnection()
       ->select('sites', 's')
       ->fields('s', array('sid', 'url', 'status'))
       ->condition('s.status', 'disabled', '<>')
       ->execute();
     foreach ($query as $id => $row) {
-      print print_r($row, TRUE) . '<br />';
+      $output .= print_r($row, TRUE);
     }
-
+    return $output;
   }
 }

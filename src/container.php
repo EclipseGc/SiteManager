@@ -1,6 +1,7 @@
 <?php
 
 $loader = require_once __DIR__ . '/autoload.php';
+require_once __DIR__ . '/../vendor/twig/twig/lib/Twig/Autoloader.php';
 
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
@@ -9,13 +10,20 @@ use SiteManager\Core\Service;
 $container = new ContainerBuilder();
 
 $container->setParameter('loader', $loader);
+$container->setParameter('twig.autoloader', Twig_Autoloader::register());
+
+$container->register('twig.loader', '\Twig_Loader_Filesystem')
+  ->setArguments(array(__DIR__.'/../templates'));
+$container->register('twig.environment', '\Twig_Environment')
+  ->setArguments(array(new Reference('twig.loader'), array('cache' => __DIR__.'/../compiled')));
+
 
 $container->register('plugin.manager.tables', 'SiteManager\Core\TableManager')
   ->setArguments(array('%loader%'));
 $container->register('plugin.manager.context', 'SiteManager\Core\ContextManager')
   ->setArguments(array('%loader%', new Reference('plugin.manager.tables')));
 $container->register('plugin.manager.routes', 'SiteManager\Core\RouteManager')
-  ->setArguments(array('%loader%', new Reference('plugin.manager.context')));
+  ->setArguments(array('%loader%', new Reference('plugin.manager.context'), new Reference('twig.environment')));
 
 $container->register('controller.resolver', 'SiteManager\Core\ControllerResolver')
   ->setArguments(array(new Reference('plugin.manager.routes')));

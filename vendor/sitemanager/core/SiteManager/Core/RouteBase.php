@@ -22,6 +22,13 @@ abstract class RouteBase extends ContextAwarePluginBase implements RouteInterfac
   protected $request;
 
   /**
+   * The twig environment to run templating through.
+   *
+   * @var Twig_Environment
+   */
+  protected $environment;
+
+  /**
    * Defines the type of route.
    *
    * @var string
@@ -48,6 +55,10 @@ abstract class RouteBase extends ContextAwarePluginBase implements RouteInterfac
     $this->request = $request;
   }
 
+  public function setTwigEnvironment(\Twig_Environment $environment) {
+    $this->environment = $environment;
+  }
+
   /**
    * A generic method for setting sane defaults on the returned response.
    *
@@ -56,7 +67,9 @@ abstract class RouteBase extends ContextAwarePluginBase implements RouteInterfac
   public function getResponse() {
     $response = new Response($this->render());
     $response->headers->set('Content-Type', $this->getType());
-//    $response->setTtl(20);
+    if ($this->type == 'html') {
+      $response->setContent($this->environment->render('html.html.twig', array('page' => $response->getContent(), 'head_title' => 'This is a test')));
+    }
     return $response;
   }
 
@@ -88,7 +101,6 @@ abstract class RouteBase extends ContextAwarePluginBase implements RouteInterfac
       'csv' => 'text/csv',
       'html' => 'text/html',
       'plain' => 'text/plain',
-      'xml' => 'text/xml',
     );
   }
 }

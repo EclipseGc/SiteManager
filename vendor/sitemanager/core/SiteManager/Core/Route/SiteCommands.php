@@ -22,7 +22,7 @@ use SiteManager\Core\Service;
  * )
  */
 class SiteCommands extends RouteBase {
-  protected $type = 'xhtml';
+  protected $type = 'html';
 
   public function render() {
     $output = '';

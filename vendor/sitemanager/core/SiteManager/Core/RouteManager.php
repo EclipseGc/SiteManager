@@ -23,6 +23,13 @@ class RouteManager extends PluginManagerBase {
   protected $manager;
 
   /**
+   * The twig environment to run templating through.
+   *
+   * @var Twig_Environment
+   */
+  protected $environment;
+
+  /**
    * Previously loaded route definitions.
    *
    * @var array();
@@ -36,8 +43,9 @@ class RouteManager extends PluginManagerBase {
    * @param UniversalClassLoader $loader
    * @param ContextManager $manager
    */
-  public function __construct(UniversalClassLoader $loader, ContextManager $manager) {
+  public function __construct(UniversalClassLoader $loader, ContextManager $manager, \Twig_Environment $environment) {
     $this->manager = $manager;
+    $this->environment = $environment;
     $namespaces = $loader->getNamespaces();
     $annotation_dir = $namespaces['SiteManager\Core'];
     foreach ($namespaces as $namespace => $dir) {
@@ -89,6 +97,7 @@ class RouteManager extends PluginManagerBase {
     if (isset($configuration['request'])) {
       $instance->setRequest($configuration['request']);
     }
+    $instance->setTwigEnvironment($this->environment);
     $this->setRouteContext($instance, $configuration['request']->attributes->all());
     return $instance;
   }

@@ -9,6 +9,7 @@
 
 namespace SiteManager\Core;
 
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Controller\ControllerResolverInterface;
 use SiteManager\Core\RouteManager;
 use Symfony\Component\HttpFoundation\Request;
