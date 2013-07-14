@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Matcher\UrlMatcher;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\RouteCollection;
+use Symfony\Component\Form\FormRendererInterface;
 
 class RouteManager extends PluginManagerBase {
 
@@ -30,6 +31,11 @@ class RouteManager extends PluginManagerBase {
   protected $environment;
 
   /**
+   * @var \Symfony\Component\Form\FormRendererInterface
+   */
+  protected $engine;
+
+  /**
    * Previously loaded route definitions.
    *
    * @var array();
@@ -43,10 +49,10 @@ class RouteManager extends PluginManagerBase {
    * @param UniversalClassLoader $loader
    * @param ContextManager $manager
    */
-  public function __construct(UniversalClassLoader $loader, ContextManager $manager, \Twig_Environment $environment) {
+  public function __construct(array $namespaces, ContextManager $manager, \Twig_Environment $environment, FormRendererInterface $engine) {
     $this->manager = $manager;
     $this->environment = $environment;
-    $namespaces = $loader->getNamespaces();
+    $this->engine = $engine;
     $annotation_dir = $namespaces['SiteManager\Core'];
     foreach ($namespaces as $namespace => $dir) {
       unset($namespaces[$namespace]);
@@ -67,7 +73,7 @@ class RouteManager extends PluginManagerBase {
     // Routes are cached in their own context table, so the storage controller
     // for the context is loaded in order to attempt to load requested route.
     $storage = $this->manager->getStorage('route');
-    $route = $storage->loadMultiple(array(), array('name' => $plugin_id));
+    $route = $storage->loadMultiple('route', array(), array('name' => $plugin_id));
     // Name is unique, it's just not the primary key.
     $route = array_pop($route);
     // If we have a route, return its values.
@@ -81,8 +87,11 @@ class RouteManager extends PluginManagerBase {
    * {@inheritdoc}
    */
   public function getDefinitions() {
+    if ($this->definitions) {
+      return $this->definitions;
+    }
     $controller = $this->manager->getStorage('route');
-    $routes = $controller->loadMultiple();
+    $routes = $controller->loadMultiple('route');
     foreach ($routes as $route) {
       $this->definitions[$route->name] = $route->all();
     }
@@ -98,6 +107,7 @@ class RouteManager extends PluginManagerBase {
       $instance->setRequest($configuration['request']);
     }
     $instance->setTwigEnvironment($this->environment);
+    $instance->setEngine($this->engine);
     $this->setRouteContext($instance, $configuration['request']->attributes->all());
     return $instance;
   }
@@ -132,7 +142,7 @@ class RouteManager extends PluginManagerBase {
    */
   public function clearCachedDefinitions() {
     $storage = $this->manager->getStorage('route');
-    $storage->deleteMultiple();
+    $storage->deleteMultiple('route');
   }
 
   /**
@@ -143,6 +153,7 @@ class RouteManager extends PluginManagerBase {
     foreach ($definitions as $plugin_id => &$definition) {
       $route = $this->manager->createInstance('route', array('values' => $definition));
       $this->processDefinition($route, $plugin_id);
+      $route->is_new = TRUE;
       $route->save();
     }
   }
@@ -162,9 +173,11 @@ class RouteManager extends PluginManagerBase {
     $contexts = $instance->getContextDefinitions();
     foreach ($contexts as $argument => $definition) {
       $options = array(
-        'id' => $route_info[$argument],
         'definition' => $definition,
       );
+      if (isset($route_info[$argument])) {
+        $options['id'] = $route_info[$argument];
+      }
       $context = $this->manager->getInstance($options);
       $instance->setContextValue($argument, $context);
     }
@@ -223,7 +236,7 @@ class RouteManager extends PluginManagerBase {
 
     // Attempt to build a route collection by the current path.
     $storage = $this->manager->getStorage('route');
-    foreach ($storage->loadMultiple(array(), array('path' => $request->getPathInfo())) as $route) {
+    foreach ($storage->loadMultiple('route', array(), array('path' => $request->getPathInfo())) as $route) {
       $collection->add($route->name, $this->getRoute($route->name));
     }
     // Attempt to build a route collection by path_root.
@@ -235,7 +248,7 @@ class RouteManager extends PluginManagerBase {
         $path_root = array_reverse($path);
         array_pop($path_root);
         $path_root = implode('/', $path_root);
-        $routes = $storage->loadMultiple(array(), array('path_root' => $path_root));
+        $routes = $storage->loadMultiple('route', array(), array('path_root' => $path_root));
         if ($routes) {
           foreach ($routes as $route) {
             $collection->add($route->name, $this->getRoute($route->name));
@@ -246,7 +259,7 @@ class RouteManager extends PluginManagerBase {
     }
     // If all else fails just build all the routes.
     if (!$collection->count()) {
-      $collection = $this->getRouteCollection();
+//      $collection = $this->getRouteCollection();
     }
     $matcher = new UrlMatcher($collection, $context);
     return $matcher->match($request->getPathInfo());

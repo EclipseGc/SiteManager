@@ -14,22 +14,31 @@ use SiteManager\Core\UpcastableDataBase;
 /**
  * @Context(
  *   id = "site",
- *   base_table = "sites",
  *   primary_key = "sid",
- *   storage = "SiteManager\Core\Controller\SqlStorageController"
+ *   storage = "sql.controller"
  * )
  */
 class Site extends UpcastableDataBase implements TableSchemaInterface {
 
+  /**
+   * @var serial
+   */
   protected $sid;
 
+  /**
+   * @var string
+   * @index
+   */
   protected $url;
 
+  /**
+   * @var string
+   */
   protected $status;
 
   public function getSchema() {
     $schema = array();
-    $schema['sites'] = array(
+    $schema['site'] = array(
       'description' => 'The site context base table.',
       'fields' => array(
         'sid' => array(

@@ -9,6 +9,9 @@
     "symfony/config": "2.3.*",
     "symfony/validator": "2.3.*",
     "symfony/translation": "2.3.*",
+    "symfony/form": "2.3.*",
+    "symfony/twig-bridge": "2.3.*",
+    "symfony/yaml": "2.3.*",
     "doctrine/common": "2.3.*",
     "twig/twig": "1.*"
   },

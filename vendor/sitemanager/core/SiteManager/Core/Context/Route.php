@@ -14,19 +14,11 @@ use SiteManager\Core\UpcastableDataBase;
 /**
  * @Context(
  *   id = "route",
- *   base_table = "route",
- *   primary_key = "rid",
- *   storage = "SiteManager\Core\Controller\SqlStorageController"
+ *   primary_key = "name",
+ *   storage = "yml.controller"
  * )
  */
 class Route extends UpcastableDataBase implements TableSchemaInterface {
-
-  /**
-   * The primary key of the route.
-   *
-   * @var int
-   */
-  protected $rid;
 
   /**
    * The route name.
@@ -39,6 +31,7 @@ class Route extends UpcastableDataBase implements TableSchemaInterface {
    * The path pattern to match.
    *
    * @var string
+   * @index
    */
   protected $path = '/';
 
@@ -88,6 +81,7 @@ class Route extends UpcastableDataBase implements TableSchemaInterface {
    * The portion of this path preceding any arguments.
    *
    * @var string
+   * @index
    */
   protected $path_root;
 
@@ -101,7 +95,7 @@ class Route extends UpcastableDataBase implements TableSchemaInterface {
   /**
    * Any contextual settings for this route.
    *
-   * @return array
+   * @var array
    */
   protected $context = array();
 
@@ -110,12 +104,6 @@ class Route extends UpcastableDataBase implements TableSchemaInterface {
     $schema['route'] = array(
       'description' => 'Maps paths to various callbacks (access, page and title)',
       'fields' => array(
-        'rid' => array(
-          'description' => 'The primary identifier for a route.',
-          'type' => 'serial',
-          'unsigned' => TRUE,
-          'not null' => TRUE,
-        ),
         'name' => array(
           'description' => 'The name of the route.',
           'type' => 'varchar',
@@ -191,9 +179,8 @@ class Route extends UpcastableDataBase implements TableSchemaInterface {
       'indexes' => array(
         'path_root' => array('path_root'),
         'path' => array('path'),
-        'name' => array('name'),
       ),
-      'primary key' => array('rid'),
+      'primary key' => array('name'),
     );
     return $schema;
   }

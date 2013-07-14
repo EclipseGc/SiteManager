@@ -23,6 +23,10 @@ class UpcastableDataBase extends PluginBase implements DataInterface {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
   }
 
+  public function getId() {
+    return $this->{$this->pluginDefinition['primary_key']};
+  }
+
   public function all() {
     $class = get_class($this);
     $reflection = new \ReflectionClass($class);
@@ -48,7 +52,7 @@ class UpcastableDataBase extends PluginBase implements DataInterface {
   }
 
   public function save() {
-    return isset($this->{$this->pluginDefinition['primary_key']}) ? $this->controller->update($this->pluginDefinition['primary_key'], $this) : $this->controller->create($this);
+    return isset($this->{$this->pluginDefinition['primary_key']}) && !$this->is_new ? $this->controller->update($this->getPluginId(), $this->pluginDefinition['primary_key'], $this) : $this->controller->create($this->getPluginId(), $this);
   }
 
 }

@@ -20,7 +20,7 @@ class StatusRoute extends RouteBase {
   public function render() {
     $output = '';
     $query = Database::getConnection()
-      ->select('sites', 's')
+      ->select('site', 's')
       ->fields('s', array('sid', 'url', 'status'))
       ->condition('s.status', 'disabled', '<>')
       ->execute();

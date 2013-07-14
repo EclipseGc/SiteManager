@@ -1,15 +1,18 @@
 <?php
 /**
- * @file Contains SiteManager\Core\Controller\SqlStorageControler.
+ * @file
+ * Contains SiteManager\Core\Controller\SqlStorageControler.
  */
 
 namespace SiteManager\Core\Controller;
 
+use Drupal\Core\Database\Connection;
 use Drupal\Core\Database\Database;
 use SiteManager\Core\DataInterface;
-use SiteManager\Core\TableManager;
+use SiteManager\Core\ContextManager;
+use SiteManager\Core\ProcessInterface;
 
-class SqlStorageController implements StorageInterface {
+class SqlStorageController implements StorageInterface, ProcessInterface {
 
   /**
    * Return status for saving which involved creating a new item.
@@ -27,62 +30,64 @@ class SqlStorageController implements StorageInterface {
   const SAVED_DELETED = 3;
 
   /**
-   * The plugin definition for the context we are working with.
-   *
-   * @var array
-   */
-  protected $definition;
-
-  /**
    * @var \SiteManager\Core\TableManager.
    */
   protected $manager;
 
-  public function __construct(array $definition, TableManager $manager) {
-    $this->definition = $definition;
+  /**
+   * The database connection to use.
+   *
+   * @var \Drupal\Core\Database\Connection.
+   */
+  protected $connection;
+
+  public function __construct(ContextManager $manager, Connection $connection) {
     $this->manager = $manager;
+    $this->connection = $connection;
   }
 
-  public function load($id) {
-    if (!Database::getConnection()->schema()->tableExists($this->definition['base_table'])) {
+  public function load($plugin_id, $id) {
+    if (!$this->connection->schema()->tableExists($plugin_id)) {
       return;
     }
-    $object = Database::getConnection()
-      ->select($this->definition['base_table'], 'base_table')
+    $definition = $this->manager->getDefinition($plugin_id);
+    $object = $this->connection
+      ->select($plugin_id, 'base_table')
       ->fields('base_table')
-      ->condition('base_table.' . $this->definition['primary_key'], $id)
+      ->condition('base_table.' . $definition['primary_key'], $id)
       ->execute()
-      ->fetchObject($this->definition['class'], array($this, array('id' => $id), $this->definition['id'], $this->definition));
+      ->fetchObject($definition['class'], array($this, array('id' => $id), $plugin_id, $definition));
     if ($object) {
-      $this->resultUnserialize($object);
+      $this->resultUnserialize($definition, $object);
       return $object;
     }
   }
 
-  public function loadMultiple(array $ids = array(), array $conditions = array()) {
-    if (!Database::getConnection()->schema()->tableExists($this->definition['base_table'])) {
+  public function loadMultiple($plugin_id, array $ids = array(), array $conditions = array()) {
+    if (!$this->connection->schema()->tableExists($plugin_id)) {
       return array();
     }
-    $query = Database::getConnection()
-      ->select($this->definition['base_table'], 'base_table')
+    $definition = $this->manager->getDefinition($plugin_id);
+    $query = $this->connection
+      ->select($plugin_id, 'base_table')
       ->fields('base_table');
     if ($ids) {
-      $query->condition('base_table.' . $this->definition['primary_key'], $ids, 'IN');
+      $query->condition('base_table.' . $definition['primary_key'], $ids, 'IN');
     }
     foreach ($conditions as $key => $value) {
       $query->condition('base_table.' . $key, $value);
     }
     $results = $query->execute();
-    $results->setFetchMode(\PDO::FETCH_CLASS, $this->definition['class'], array($this, array(), $this->definition['id'], $this->definition));
-    $objects = $results->fetchAllAssoc($this->definition['primary_key']);
+    $results->setFetchMode(\PDO::FETCH_CLASS, $definition['class'], array($this, array(), $plugin_id, $definition));
+    $objects = $results->fetchAllAssoc($definition['primary_key']);
     foreach ($objects as $id => $object) {
-      $this->resultUnserialize($object);
+      $this->resultUnserialize($definition, $object);
     }
     return $objects;
   }
 
-  protected function resultUnserialize(DataInterface $data) {
-    $schema = $this->manager->getSchema($this->definition['base_table']);
+  protected function resultUnserialize(array $definition, DataInterface $data) {
+    $schema = $definition['schema'];
     if (empty($schema)) {
       return FALSE;
     }
@@ -94,24 +99,25 @@ class SqlStorageController implements StorageInterface {
     }
   }
 
-  public function create(DataInterface $values) {
-    return $this->write($values);
+  public function create($plugin_id, DataInterface $values) {
+    return $this->write($plugin_id, $values);
   }
 
-  public function update($id, DataInterface $values) {
-    return $this->write($values, array($id));
+  public function update($plugin_id, $id, DataInterface $values) {
+    return $this->write($plugin_id, $values, array($id));
   }
 
-  public function delete($id) {}
+  public function delete($plugin_id, $id) {}
 
-  public function deleteMultiple(array $ids = array()) {
+  public function deleteMultiple($plugin_id, array $ids = array()) {
     if (!$ids) {
-      Database::getConnection()->truncate($this->definition['base_table'])->execute();
+      $this->connection->truncate($plugin_id)->execute();
     }
   }
 
-  protected function write(DataInterface $object, array $primary_keys = array()) {
-    $schema = $this->manager->getSchema($this->definition['base_table']);
+  protected function write($plugin_id, DataInterface $object, array $primary_keys = array()) {
+    $definition = $this->manager->getDefinition($plugin_id);
+    $schema = $definition['schema'];
     if (empty($schema)) {
       return FALSE;
     }
@@ -168,7 +174,7 @@ class SqlStorageController implements StorageInterface {
     }
 
     // Build the SQL.
-    if (empty($primary_keys)) {
+    if (empty($primary_keys) || (!empty($primary_keys) && $object->is_new)) {
       // We are doing an insert.
       $options = array('return' => Database::RETURN_INSERT_ID);
       if (isset($serial) && isset($fields[$serial])) {
@@ -185,13 +191,13 @@ class SqlStorageController implements StorageInterface {
       }
       // Create an INSERT query. useDefaults() is necessary for the SQL to be
       // valid when $fields is empty.
-      $query = Database::getConnection()->insert($this->definition['base_table'])->fields($fields)->useDefaults($default_fields);
+      $query = $this->connection->insert($plugin_id)->fields($fields)->useDefaults($default_fields);
 
       $return = SqlStorageController::SAVED_NEW;
     }
     else {
       // Create an UPDATE query.
-      $query = Database::getConnection()->update($this->definition['base_table'])->fields($fields);
+      $query = $this->connection->update($plugin_id)->fields($fields);
       foreach ($primary_keys as $key) {
         $query->condition($key, $object->$key);
       }
@@ -243,4 +249,81 @@ class SqlStorageController implements StorageInterface {
     }
     return $value;
   }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function processDefinition(&$definition, $plugin_id) {
+    $class = new \ReflectionClass($definition['class']);
+    $properties = array();
+    foreach ($class->getProperties() as $property) {
+      if ($property->getDeclaringClass()->name == $definition['class']) {
+        $properties[$property->name] = $property;
+        $documentation = $property->getDocComment();
+        $matches = array();
+        if (preg_match('(@var+[\sa-zA-Z]*)', $documentation, $matches)) {
+          list( , $type) = explode(' ', array_shift($matches));
+          $type = trim($type);
+          $definition['schema']['fields'][$property->name] = $this->getSchemaDefaults($type);
+          foreach ($this->getSchemaFieldProperties() as $schema_property) {
+            $schema_doc = array();
+            if (preg_match('(@' . $schema_property . '+[\sa-zA-Z0-9]*)', $documentation, $schema_doc)) {
+              list( , $property_value) = explode('@' . $schema_property, array_shift($schema_doc));
+              $property_value = trim($property_value);
+              $definition['schema']['fields'][$property->name][$schema_property] = $property_value;
+            }
+          }
+          $index = array();
+          if (preg_match('(@index)', $documentation, $index)) {
+            $definition['schema']['indexes'][$property->name] = array($property->name);
+          }
+        }
+      }
+    }
+    $definition['schema']['primary key'] = array($definition['primary_key']);
+  }
+
+  protected function getSchemaDefaults($type) {
+    $types = array(
+      'string' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'array' => array(
+        'type' => 'blob',
+        'not null' => FALSE,
+        'serialize' => TRUE,
+      ),
+      'serial' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'int' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      )
+    );
+    if (isset($types[$type])) {
+      return $types[$type];
+    }
+  }
+
+  protected function getSchemaFieldProperties() {
+    return array(
+      'type',
+      'size',
+      'not null',
+      'default',
+      'length',
+      'unsigned',
+      'precision',
+      'scale',
+      'serialize'
+    );
+  }
+
 }

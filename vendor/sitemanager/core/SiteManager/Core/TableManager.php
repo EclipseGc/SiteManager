@@ -18,8 +18,7 @@ use Drupal\Component\Utility\String;
 
 class TableManager extends PluginManagerBase {
 
-  public function __construct(UniversalClassLoader $loader) {
-    $namespaces = $loader->getNamespaces();
+  public function __construct(array $namespaces) {
     $annotation_dir = $namespaces['SiteManager\Core'];
     foreach ($namespaces as $namespace => $dir) {
       unset($namespaces[$namespace]);
