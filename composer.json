@@ -13,7 +13,8 @@
     "symfony/twig-bridge": "2.3.*",
     "symfony/yaml": "2.3.*",
     "doctrine/common": "2.3.*",
-    "twig/twig": "1.*"
+    "twig/twig": "1.*",
+    "twig/extensions": "1.*"
   },
   "autoload": {
     "psr-0": {

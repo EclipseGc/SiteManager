@@ -87,22 +87,6 @@ abstract class RouteBase extends ContextAwarePluginBase implements RouteInterfac
       case 'html':
         $response->setContent($this->environment->render('html.html.twig', array('page' => $this->render(), 'head_title' => 'This is a test')));
         break;
-      case 'form':
-        $response->setContent(
-          $this->environment->render(
-            'html.html.twig',
-            array(
-              'page' => $this->environment->render(
-                'form.html.twig',
-                array(
-                  'form' => $this->render()
-                )
-              ),
-              'head_title' => 'This is a form',
-            )
-          )
-        );
-        break;
     }
     return $response;
   }

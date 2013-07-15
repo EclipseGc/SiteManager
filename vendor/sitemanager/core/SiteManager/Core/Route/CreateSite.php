@@ -23,7 +23,7 @@ use Symfony\Component\Form\Forms;
  * )
  */
 class CreateSite extends RouteBase {
-  protected $type = 'form';
+  protected $type = 'html';
 
   public function render() {
     $factory = Forms::createFormFactory();
@@ -36,6 +36,6 @@ class CreateSite extends RouteBase {
       }
     }
     $form = $builder->getForm();
-    return $this->engine->renderBlock($form->createView(), 'form', array('form' => $form));
+    return $this->engine->renderBlock($form->createView(), 'form_widget', array('form' => $form->createView()));
   }
 }

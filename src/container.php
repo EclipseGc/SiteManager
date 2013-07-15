@@ -6,22 +6,34 @@ require_once __DIR__ . '/../vendor/twig/twig/lib/Twig/Autoloader.php';
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Bridge\Twig\Extension\FormExtension;
 use SiteManager\Core\Service;
 use Drupal\Core\Database\Database;
 
 $container = new ContainerBuilder();
 
+$reflected = new \ReflectionClass('Symfony\Bridge\Twig\Extension\FormExtension');
+$path = dirname($reflected->getFileName()).'/../Resources/views/Form';
+
 $container->setParameter('loader', $loader);
 $container->setParameter('twig.autoloader', Twig_Autoloader::register());
+$container->setParameter('twig.form.extension.resources', $path);
+$container->setParameter('twig.i18n', new \Twig_Extensions_Extension_I18n());
 
 $container->register('twig.loader', '\Twig_Loader_Filesystem')
-  ->setArguments(array(__DIR__.'/../templates'));
+  ->setArguments(array(array(__DIR__.'/../templates', '%twig.form.extension.resources%')));
 $container->register('twig.environment', '\Twig_Environment')
-  ->setArguments(array(new Reference('twig.loader'), array('cache' => __DIR__.'/../compiled')));
+  ->setArguments(array(new Reference('twig.loader'), array('cache' => __DIR__.'/../compiled', 'autoescape' => FALSE,)))
+  ->addMethodCall('addExtension', array(new Reference('form.extension')))
+  ->addMethodCall('addExtension', array('%twig.i18n%'));
 $container->register('twig.renderer.engine', 'Symfony\Bridge\Twig\Form\TwigRendererEngine')
+  ->setArguments(array(array('form_div_layout.html.twig')))
   ->addMethodCall('setEnvironment', array(new Reference('twig.environment')));
 $container->register('twig.renderer', 'Symfony\Bridge\Twig\Form\TwigRenderer')
   ->setArguments(array(new Reference('twig.renderer.engine')));
+
+$container->register('form.extension', 'Symfony\Bridge\Twig\Extension\FormExtension')
+  ->setArguments(array(new Reference('twig.renderer')));
 
 // Connections
 $connection = array(
