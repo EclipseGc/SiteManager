@@ -15,7 +15,7 @@ class ContextTables extends DerivativeBase {
 
     foreach ($contextManager->getDefinitions() as $plugin_id => $definition) {
       $this->derivatives[$plugin_id] = $base_plugin_definition;
-      $this->derivatives[$plugin_id]['tables'] = array($definition['base_table']);
+      $this->derivatives[$plugin_id]['tables'] = array($plugin_id);
     }
     return $this->derivatives;
   }
