@@ -121,15 +121,31 @@ on anything beyond that, but this should give you a nice minimal use case to see
 Code Flow:
 ==========
 
+The basic flow of the system attempts to emulate what I've seen in various Symfony systems and tutorials. At the same time,
+there are some clear concessions to Drupal's use cases, and I'm trying to keep them in mind as I develop here. Opening up
+the /web/index.php file, the first line includes our dependency injection container. This functions largely in place of
+what we might think of as a "bootstrap" process. It is only mildly analogous, but it's all we have in this scenario. Within
+the container, database connections, configuration directories and all the relevant class architecture are setup.
 
+The index goes on to create a request object from global values and then leverages the RouteManager to determine which
+route matches the current request. The RouteManager::matchRoute() method leverages the ContextManager and asks it to
+generate a route collection for routes that matches the exact path. If that collection is empty, it them begins to break
+down the current request path piece by piece and attempts to generate RouteCollections for subsets of the request path.
+As an example, if you had a node/{node} path pattern on a route plugin, during registration of routes, that path would be
+broken down to the most basic component that doesn't contain a variable. In our case this would be simply 'node'. That is
+stored along side the rest of the route and can be indexed for faster queries. When the route node/1 is requested, no
+exact match will exist for node/1, but the RouteManager::matchRoute() method will begin to remove elements of the path in
+order to see if we can match a smaller subset. Getting a route that has 'path_root' of node and including it into our
+collection for matching purposes makes for a smaller collection. The longer the full route, the longer this process could
+take. Finally, if all else fails we have an empty else statement that I'm considering putting an event into. This could
+potentially give other Symfony systems that don't leverage the Route plugin the ability to provide their own collections
+for a given request.
 
+Once a route is matched, its information is added to the request object and passed to Symfony's HttpKernel (actually the
+cache, but I digress). HttpKernel will fire the kernel.request::onResponse event to which our PluginRouterListener is
+listening. That will hand off the request to a custom ControllerResolver that will determine if the current requested
+route is provided by a plugin at which point it will return a response from a plugin if available.
 
-
-
-
-
-
-
-
-
+Route Plugins provide responses as part of their interface. The route in question will generate a response and pass it
+back, which is ultimately run through the normal Response->send() methodology.
 
