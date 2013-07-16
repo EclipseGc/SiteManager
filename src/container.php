@@ -36,16 +36,7 @@ $container->register('form.extension', 'Symfony\Bridge\Twig\Extension\FormExtens
   ->setArguments(array(new Reference('twig.renderer')));
 
 // Connections
-$connection = array(
-  'database' => 'sframework',
-  'username' => 'root',
-  'password' => 'root',
-  'host' => 'localhost',
-  'port' => '',
-  'namespace' => 'Drupal\\Core\\Database\\Driver\\mysql',
-  'driver' => 'mysql',
-  'prefix' => '',
-);
+$connection = require_once __DIR__ . '/../sites/default/dbconnection.php';
 Database::addConnectionInfo('default', 'default', $connection);
 $container->register('database.default', 'Drupal\Core\Database\Connection')
   ->setFactoryClass('Drupal\Core\Database\Database')

@@ -1,8 +1,6 @@
 <?php
 
-global $databases;
-
-$databases['default']['default'] = array (
+$connection = array (
   'database' => 'sframework',
   'username' => 'root',
   'password' => 'root',
@@ -12,3 +10,5 @@ $databases['default']['default'] = array (
   'driver' => 'mysql',
   'prefix' => '',
 );
+
+return $connection;
