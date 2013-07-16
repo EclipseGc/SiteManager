@@ -103,15 +103,17 @@ Installation:
 
 3.) php composer.phar install
 
-4.) setup /web/index.php as your site index.
+4.) add database credentials to sites/default/dbconneciton.php
 
-5.) visit /install.php in your browser
+5.) setup /web/index.php as your site index.
 
-5.) visit /routeRebuild.php in your browser.
+6.) visit /install.php in your browser
 
-6.) visit /index.php
+7.) visit /routeRebuild.php in your browser.
 
-You shouldn't actually see anything in step 6. Currently that page is attempting to display all "site" contexts and
+8.) visit /index.php
+
+You shouldn't actually see anything in step 8. Currently that page is attempting to display all "site" contexts and
 since you don't have any, obviously it can't do anything. There's a little code in the SiteCommands route that you could
 use to get a new site context created if you want. From there you should be able to visit /site/{site}. I'm still working
 on anything beyond that, but this should give you a nice minimal use case to see how the code basically works.
