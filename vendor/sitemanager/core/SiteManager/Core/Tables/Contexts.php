@@ -27,8 +27,12 @@ class Contexts extends PluginBase implements TableSchemaInterface {
   public function getSchema() {
     list($plugin_id, $context) = explode(':', $this->getPluginId());
     $contextManager = Service::get('plugin.manager.context');
-    $context = $contextManager->createInstance($context);
-    if ($context instanceof TableSchemaInterface) {
+    $definition = $contextManager->getDefinition($context);
+    if (isset($definition['schema'])) {
+      return array($context => $definition['schema']);
+    }
+    if (in_array('SiteManager\Core\TableSchemaInterface', class_implements($definition['class']))) {
+      $context = $contextManager->createInstance($context);
       return $context->getSchema();
     }
     return array();
