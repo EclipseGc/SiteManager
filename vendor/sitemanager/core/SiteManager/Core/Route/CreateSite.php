@@ -35,6 +35,7 @@ class CreateSite extends RouteBase {
         $builder->add($property, 'text');
       }
     }
+    $builder->add('submit', 'submit');
     $form = $builder->getForm();
     return $this->engine->renderBlock($form->createView(), 'form_widget', array('form' => $form->createView()));
   }
