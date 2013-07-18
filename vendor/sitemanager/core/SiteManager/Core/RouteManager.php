@@ -257,10 +257,6 @@ class RouteManager extends PluginManagerBase {
         }
       }
     }
-    // If all else fails just build all the routes.
-    if (!$collection->count()) {
-//      $collection = $this->getRouteCollection();
-    }
     $matcher = new UrlMatcher($collection, $context);
     return $matcher->match($request->getPathInfo());
   }

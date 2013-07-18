@@ -15,11 +15,13 @@ $container = new ContainerBuilder();
 $reflected = new \ReflectionClass('Symfony\Bridge\Twig\Extension\FormExtension');
 $path = dirname($reflected->getFileName()).'/../Resources/views/Form';
 
+// Parameters
 $container->setParameter('loader', $loader);
 $container->setParameter('twig.autoloader', Twig_Autoloader::register());
 $container->setParameter('twig.form.extension.resources', $path);
 $container->setParameter('twig.i18n', new \Twig_Extensions_Extension_I18n());
 
+// Twig
 $container->register('twig.loader', '\Twig_Loader_Filesystem')
   ->setArguments(array(array(__DIR__.'/../templates', '%twig.form.extension.resources%')));
 $container->register('twig.environment', '\Twig_Environment')
@@ -45,10 +47,12 @@ $container->register('database.default', 'Drupal\Core\Database\Connection')
 $container->register('sql.controller', 'SiteManager\Core\Controller\SqlStorageController')
   ->setArguments(array(new Reference('plugin.manager.context'), new Reference('database.default')));
 
+// Yaml storage
 $container->setParameter('yml.storage', dir('/var/www/sframework.drupal-testing.com/configuration'));
 $container->register('yml.controller', 'SiteManager\Core\Controller\YamlStorageController')
   ->setArguments(array(new Reference('plugin.manager.context'), '%yml.storage%'));
 
+// Plugin Managers
 $container->register('plugin.manager.tables', 'SiteManager\Core\TableManager')
   ->setArguments(array(new Reference('namespaces')));
 $container->register('plugin.manager.context', 'SiteManager\Core\ContextManager')
@@ -56,21 +60,23 @@ $container->register('plugin.manager.context', 'SiteManager\Core\ContextManager'
 $container->register('plugin.manager.routes', 'SiteManager\Core\RouteManager')
   ->setArguments(array(new Reference('namespaces'), new Reference('plugin.manager.context'), new Reference('twig.environment'), new Reference('twig.renderer')));
 
-$container->register('controller.resolver', 'SiteManager\Core\ControllerResolver')
-  ->setArguments(array(new Reference('plugin.manager.routes')));
+// Symfony's Controller Resolver
 $container->register('symfony.resolver', 'Symfony\Component\HttpKernel\Controller\ControllerResolver');
 
+// Symfony's Event Dispatcher & subscribers
 $container->register('event.dispatcher', 'Symfony\Component\EventDispatcher\EventDispatcher')
   ->addMethodCall('addSubscriber', array(new Reference('plugin.router')))
   ->addMethodCall('addSubscriber', array(new Reference('response.listener')))
   ->addMethodCall('addSubscriber', array(new Reference('streamed.listener')));
 
+// Various Listener classes.
 $container->register('response.listener', 'Symfony\Component\HttpKernel\EventListener\ResponseListener')
   ->setArguments(array('UTF-8'));
 $container->register('streamed.listener', 'Symfony\Component\HttpKernel\EventListener\StreamedResponseListener');
 $container->register('plugin.router', 'SiteManager\Core\PluginRouterListener')
-  ->setArguments(array(new Reference('controller.resolver')));
+  ->setArguments(array(new Reference('plugin.manager.routes')));
 
+// The HttpKernel stack
 $container->register('kernel', 'Symfony\Component\HttpKernel\HttpKernel')
   ->setArguments(array(new Reference('event.dispatcher'), new Reference('symfony.resolver')));
 $container->register('kernel.cache', 'Symfony\Component\HttpKernel\HttpCache\HttpCache')
@@ -79,6 +85,7 @@ $container->register('kernel.cache.store', 'Symfony\Component\HttpKernel\HttpCac
   ->setArguments(array('%kernel.cache.dir%'));
 $container->setParameter('kernel.cache.dir', __DIR__.'/../cache');
 
+// PSR-0 Namespaces & Container definitions.
 $container->setDefinition('namespaces', new Definition())
   ->setSynthetic(TRUE);
 $container->set('namespaces', $loader->getPrefixes());
