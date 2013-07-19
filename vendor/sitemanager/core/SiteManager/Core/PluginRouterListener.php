@@ -1,10 +1,7 @@
 <?php
 /**
- * Created by IntelliJ IDEA.
- * User: kris
- * Date: 7/18/13
- * Time: 5:25 PM
- * To change this template use File | Settings | File Templates.
+ * @file
+ * Contains SiteManager\Core\PluginRouterListener.
  */
 
 namespace SiteManager\Core;
