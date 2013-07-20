@@ -14,7 +14,7 @@ use SiteManager\Core\UpcastableDataBase;
  * @Context(
  *   id = "route",
  *   primary_key = "name",
- *   storage = "yml.controller"
+ *   storage = "sql.controller"
  * )
  */
 class Route extends UpcastableDataBase {

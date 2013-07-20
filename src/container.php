@@ -67,7 +67,8 @@ $container->register('symfony.resolver', 'Symfony\Component\HttpKernel\Controlle
 $container->register('event.dispatcher', 'Symfony\Component\EventDispatcher\EventDispatcher')
   ->addMethodCall('addSubscriber', array(new Reference('plugin.router')))
   ->addMethodCall('addSubscriber', array(new Reference('response.listener')))
-  ->addMethodCall('addSubscriber', array(new Reference('streamed.listener')));
+  ->addMethodCall('addSubscriber', array(new Reference('streamed.listener')))
+  ->addMethodCall('addSubscriber', array(new Reference('exception.listener')));
 
 // Various Listener classes.
 $container->register('response.listener', 'Symfony\Component\HttpKernel\EventListener\ResponseListener')
@@ -75,6 +76,7 @@ $container->register('response.listener', 'Symfony\Component\HttpKernel\EventLis
 $container->register('streamed.listener', 'Symfony\Component\HttpKernel\EventListener\StreamedResponseListener');
 $container->register('plugin.router', 'SiteManager\Core\PluginRouterListener')
   ->setArguments(array(new Reference('plugin.manager.routes')));
+$container->register('exception.listener', 'SiteManager\Core\EventListener\KernelEventsExceptionListener');
 
 // The HttpKernel stack
 $container->register('kernel', 'Symfony\Component\HttpKernel\HttpKernel')

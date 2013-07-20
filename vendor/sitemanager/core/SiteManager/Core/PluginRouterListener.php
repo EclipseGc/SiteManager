@@ -13,7 +13,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Psr\Log\LoggerInterface;
 use SiteManager\Core\RouteManager;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Exception\MethodNotAllowedException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -75,9 +74,9 @@ class PluginRouterListener implements EventSubscriberInterface, ControllerResolv
       unset($parameters['_controller']);
       $request->attributes->set('_route_params', $parameters);
     } catch (ResourceNotFoundException $e) {
-      $message = sprintf('No route found for "%s %s"', $request->getMethod(), $request->getPathInfo());
-
-      throw new NotFoundHttpException($message, $e);
+      // We don't have a plugin for this, so just pass through to give other
+      // listeners an opportunity to do routing for this.
+      return;
     } catch (MethodNotAllowedException $e) {
       $message = sprintf('No route found for "%s %s": Method Not Allowed (Allow: %s)', $request->getMethod(), $request->getPathInfo(), strtoupper(implode(', ', $e->getAllowedMethods())));
 
