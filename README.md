@@ -98,11 +98,17 @@ Installation:
 =============
 
 1.) Checkout the master branch of this repo.
+
 2.) curl -sS https://getcomposer.org/installer | php
+
 3.) php composer.phar install
+
 4.) setup /web/index.php as your site index.
+
 5.) visit /install.php in your browser
+
 5.) visit /routeRebuild.php in your browser.
+
 6.) visit /index.php
 
 You shouldn't actually see anything in step 6. Currently that page is attempting to display all "site" contexts and
