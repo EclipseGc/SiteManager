@@ -12,7 +12,7 @@ With that in mind, what does exist here is a cohesive experiment in which I have
 routing & entities, and also an attempt at simplifying entities to some degree in order to make them more flexible,
 easier to follow, and ultimately more important to the whole of the code base.
 
-Getting Your Barings:
+Getting Your Bearings:
 
 As of right now, everything interesting exists in vendor/sitemanager/SiteManager/Core. Before I dissect what's in there,
 it's worth pointing out that a number of Drupal systems are incorporated into this. 
